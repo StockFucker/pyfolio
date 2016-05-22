@@ -26,6 +26,8 @@ from pandas.tseries.offsets import BDay
 from pandas_datareader import data as web
 import numpy as np
 
+import tushare as ts
+
 from . import pos
 from . import txn
 
@@ -217,6 +219,13 @@ def get_symbol_from_yahoo(symbol, start=None, end=None):
     rets.columns = [symbol]
     return rets
 
+def get_symbol_from_tushare(symbol, start=None, end=None):
+    rets = None
+    rets = ts.get_h_data(symbol,start=start,end=end)        
+    rets = px[['close']].pct_change().dropna()
+    rets.index = rets.index.tz_localize("UTC")
+    rets.columns = [symbol]
+    return rets
 
 def default_returns_func(symbol, start=None, end=None):
     """
