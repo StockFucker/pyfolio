@@ -220,12 +220,31 @@ def get_symbol_from_yahoo(symbol, start=None, end=None):
     return rets
 
 def get_symbol_from_tushare(symbol, start=None, end=None):
-    rets = None
-    rets = ts.get_h_data(symbol,start=start,end=end)        
+    px = None
+    if len(symbol) == 6:
+        px = ts.get_h_data(symbol,start=start,end=end)        
+    else:
+        px = ts.get_hist_data(symbol,start=start,end=end)
+        px.index = pd.DatetimeIndex(px.index)
     rets = px[['close']].pct_change().dropna()
     rets.index = rets.index.tz_localize("UTC")
     rets.columns = [symbol]
     return rets
+
+def tushare_returns_func(symbol, start=None, end=None):
+    if start is None:
+        start = '2014-01-01'
+    else:
+        start = start.strftime('%Y-%m-%d')
+
+    if end is None:
+        end = datetime.now().strftime('%Y-%m-%d')
+    else:
+        end = end.strftime('%Y-%m-%d')
+
+    rets = get_symbol_from_tushare(symbol, start=start, end=end)
+
+    return rets[symbol]
 
 def default_returns_func(symbol, start=None, end=None):
     """
@@ -431,7 +450,7 @@ def extract_rets_pos_txn_from_zipline(backtest):
 # Settings dict to store functions/values that may
 # need to be overridden depending on the users environment
 SETTINGS = {
-    'returns_func': default_returns_func
+    'returns_func': tushare_returns_func
 }
 
 

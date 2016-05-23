@@ -1,4 +1,5 @@
-#
+# -*- coding: utf-8 -*-
+
 # Copyright 2016 Quantopian, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,16 +69,16 @@ def create_full_tear_sheet(returns,
                            set_context=True):
     """
     Generate a number of tear sheets that are useful
-    for analyzing a strategy's performance.
+    for analyzing a strategy's performance.最常用的完整表格。
 
-    - Fetches benchmarks if needed.
+    - Fetches benchmarks if needed。会下载指数数据。
     - Creates tear sheets for returns, and significant events.
         If possible, also creates tear sheets for position analysis,
-        transaction analysis, and Bayesian analysis.
+        transaction analysis, and Bayesian analysis.会尝试持仓，交易，贝叶斯分析。
 
     Parameters
     ----------
-    returns : pd.Series
+    returns : pd.Series  时序参数。每日涨跌幅，非累积的。
         Daily returns of the strategy, noncumulative.
          - Time series with decimal returns.
          - Example:
@@ -86,7 +87,7 @@ def create_full_tear_sheet(returns,
             2015-07-20    0.030957
             2015-07-21    0.004902
     positions : pd.DataFrame, optional
-        Daily net position values.
+        Daily net position values. 每次持有的净仓位。空仓用0或者Nan。持币用cash。
          - Time series of dollar amount invested in each position and cash.
          - Days where stocks are not held can be represented by 0 or NaN.
          - Non-working capital is labelled 'cash'
@@ -97,22 +98,22 @@ def create_full_tear_sheet(returns,
             2004-01-13    -13853.2800    13653.6400      -43.6375
     transactions : pd.DataFrame, optional
         Executed trade volumes and fill prices.
-        - One row per trade.
+        - One row per trade.每笔交易
         - Trades on different names that occur at the
           same time will have identical indicies.
         - Example:
             index                  amount   price    symbol
             2004-01-09 12:18:01    483      324.12   'AAPL'
             2004-01-09 12:18:01    122      83.10    'MSFT'
-            2004-01-13 14:12:23    -75      340.43   'AAPL'
-    market_data : pd.Panel, optional
+            2004-01-13 14:12:23v    -75      340.43   'AAPL'
+    market_data : pd.Panel, optional 必须是panel类型。(3维)，price和volume各自有dates和symbols，跟position相同。
         Panel with items axis of 'price' and 'volume' DataFrames.
         The major and minor axes should match those of the
-        the passed positions DataFrame (same dates and symbols).
+        the passed positions DataFrame (same dates and symbols).日期和代码应该和positions相同。
     gross_lev : pd.Series, optional
         The leverage of a strategy.
          - Time series of the sum of long and short exposure per share
-            divided by net asset value.
+            divided by net asset value.杠杆率。
          - Example:
             2009-12-04    0.999932
             2009-12-07    0.999783
@@ -123,32 +124,32 @@ def create_full_tear_sheet(returns,
         tearsheet stats and plots.
         If a value is provided, slippage parameter sweep
         plots will be generated from the unadjusted returns.
-        Transactions and positions must also be passed.
+        Transactions and positions must also be passed.必须跟交易数据和持仓数据一起传。会生成未调整回报的的图。
         - See txn.adjust_returns_for_slippage for more details.
-    live_start_date : datetime, optional
+    live_start_date : datetime, optional   实盘live日期，datetime应该被标准化。
         The point in time when the strategy began live trading,
         after its backtest period. This datetime should be normalized.
     hide_positions : bool, optional
         If True, will not output any symbol names.
-    bayesian: boolean, optional
+    bayesian: boolean, optional 是否分析贝叶斯。
         If True, causes the generation of a Bayesian tear sheet.
-    round_trips: boolean, optional
+    round_trips: boolean, optional 是否round-trip每笔买卖来判断获利是否均匀。
         If True, causes the generation of a round trip tear sheet.
     cone_std : float, or tuple, optional
         If float, The standard deviation to use for the cone plots.
         If tuple, Tuple of standard deviation values to use for the cone plots
          - The cone is a normal distribution with this standard deviation
              centered around a linear regression.
-    bootstrap : boolean (optional)
+    bootstrap : boolean (optional)   检验样本的可信度。
         Whether to perform bootstrap analysis for the performance
         metrics. Takes a few minutes longer.
-    set_context : boolean, optional
+    set_context : boolean, optional  设置画图的上下文
         If True, set default plotting style context.
          - See plotting.context().
     """
 
     if benchmark_rets is None:
-        benchmark_rets = utils.get_symbol_rets('SPY')
+        benchmark_rets = utils.get_symbol_rets('hs300')
 
     # If the strategy's history is longer than the benchmark's, limit strategy
     if returns.index[0] < benchmark_rets.index[0]:
@@ -246,7 +247,7 @@ def create_returns_tear_sheet(returns, live_start_date=None,
     """
 
     if benchmark_rets is None:
-        benchmark_rets = utils.get_symbol_rets('SPY')
+        benchmark_rets = utils.get_symbol_rets('hs300')
         # If the strategy's history is longer than the benchmark's, limit
         # strategy
         if returns.index[0] < benchmark_rets.index[0]:
@@ -678,7 +679,7 @@ def create_interesting_times_tear_sheet(
                       fmt='{0:.2f}%')
 
     if benchmark_rets is None:
-        benchmark_rets = utils.get_symbol_rets('SPY')
+        benchmark_rets = utils.get_symbol_rets('hs300')
         # If the strategy's history is longer than the benchmark's, limit
         # strategy
         if returns.index[0] < benchmark_rets.index[0]:
@@ -700,9 +701,9 @@ def create_interesting_times_tear_sheet(
         timeseries.cum_returns(rets_period).plot(
             ax=ax, color='forestgreen', label='algo', alpha=0.7, lw=2)
         timeseries.cum_returns(bmark_interesting[name]).plot(
-            ax=ax, color='gray', label='SPY', alpha=0.6)
+            ax=ax, color='gray', label='hs300', alpha=0.6)
         ax.legend(['algo',
-                   'SPY'],
+                   'hs300'],
                   loc=legend_loc)
         ax.set_title(name, size=14)
         ax.set_ylabel('Returns')
@@ -848,7 +849,7 @@ def create_bayesian_tear_sheet(returns, benchmark_rets=None,
     fama_french = False
     if benchmark_rets is None:
         benchmark_rets = pd.DataFrame(
-            utils.get_symbol_rets('SPY',
+            utils.get_symbol_rets('hs300',
                                   start=returns.index[0],
                                   end=returns.index[-1]))
     # unless user indicates otherwise
